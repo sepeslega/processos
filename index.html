@@ -1,528 +1,507 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel de Processos — SEPES Legalização</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PORTAL DE PROCESSOS EM CURSO - SEPES-PE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        statusRed: '#FEE2E2',
+                        statusRedText: '#991B1B',
+                        statusYellow: '#FEF3C7',
+                        statusYellowText: '#92400E',
+                        statusGreen: '#D1FAE5',
+                        statusGreenText: '#065F46',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
-  <div class="max-w-6xl mx-auto px-4 py-8">
-    
-    <!-- Header -->
-    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-slate-200">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-900">Painel de Processos & Exigências</h1>
-        <p class="text-sm text-slate-500">SEPES Legalização · Controle de Prazos e Responsáveis</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="toggleModalConfig()" class="text-xs font-medium bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-lg shadow-sm transition">
-          ⚙ Configurar Faixas de Risco
-        </button>
-        <button onclick="toggleModalEquipe()" class="text-xs font-medium bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-lg shadow-sm transition">
-          👥 Gerenciar Equipe
-        </button>
-      </div>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg">
+                    <i data-lucide="clock" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight uppercase tracking-wide">PORTAL DE PROCESSOS EM CURSO - SEPES-PE</h1>
+                    <p class="text-xs text-slate-400">Gestão Integrada de Prazos, Licenças & Exigências</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="saveAndExportHTML()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition shadow" title="Salvar dados diretamente no arquivo HTML">
+                    <i data-lucide="save" class="w-4 h-4"></i> Salvar no HTML
+                </button>
+                <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition shadow">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Novo Processo
+                </button>
+            </div>
+        </div>
     </header>
 
-    <!-- Banner de Alerta Crítico -->
-    <div id="alertaBanner" class="hidden mt-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
-      <div class="flex items-center">
-        <span class="text-red-500 text-lg mr-2">⚠</span>
-        <p id="alertaTexto" class="text-sm font-medium text-red-800"></p>
-      </div>
-    </div>
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- Cards de Resumo -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total</span>
-        <p id="statTotal" class="text-2xl font-bold text-slate-900 mt-1">0</p>
-      </div>
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Em Aberto</span>
-        <p id="statAberto" class="text-2xl font-bold text-blue-600 mt-1">0</p>
-      </div>
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <span class="text-xs font-medium text-amber-600 uppercase tracking-wider">Atenção</span>
-        <p id="statAtencao" class="text-2xl font-bold text-amber-600 mt-1">0</p>
-      </div>
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <span class="text-xs font-medium text-red-600 uppercase tracking-wider">Crítico / Atrasado</span>
-        <p id="statCritico" class="text-2xl font-bold text-red-600 mt-1">0</p>
-      </div>
-    </section>
-
-    <!-- Formulário de Cadastro de Processo -->
-    <section class="mt-8 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-      <h2 id="formTitulo" class="text-base font-semibold text-slate-900 mb-4">Novo Processo / Exigência</h2>
-      <form id="processoForm" onsubmit="salvarProcesso(event)" class="space-y-4">
-        <input type="hidden" id="processoId" value="">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Título / Processo *</label>
-            <input type="text" id="titulo" required placeholder="Ex: Alvará de Funcionamento" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Cliente / Razão Social</label>
-            <input type="text" id="cliente" placeholder="Ex: ABC Alimentos Ltda" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Órgão / Entidade</label>
-            <input type="text" id="orgao" placeholder="Ex: JUCESP, Prefeitura, Bombeiros" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Data Limite (Prazo Fatal) *</label>
-            <input type="date" id="prazo" required class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Status</label>
-            <select id="status" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              <option value="Não iniciado">Não iniciado</option>
-              <option value="Em andamento">Em andamento</option>
-              <option value="Aguardando órgão">Aguardando órgão</option>
-              <option value="Pendente cliente">Pendente cliente</option>
-              <option value="Concluído">Concluído</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Responsáveis (Equipe)</label>
-            <div id="responsaveisContainer" class="flex flex-wrap gap-1.5 p-1.5 border border-slate-300 rounded-lg min-h-[38px] bg-white">
-              <span class="text-xs text-slate-400 p-1">Nenhum membro cadastrado</span>
+        <!-- Banner / Resumo Operacional -->
+        <div class="mb-8 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">Painel Geral de Prazos</h2>
+                <p class="text-sm text-slate-500">Prazos recalculados diariamente. Agrupados por Empreendimento.</p>
             </div>
-          </div>
+            
+            <!-- Cards de Contadores -->
+            <div class="grid grid-cols-3 gap-3 w-full md:w-auto">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-center min-w-[110px]">
+                    <span class="block text-2xl font-black text-red-700" id="count-red">0</span>
+                    <span class="text-xs font-semibold text-red-600 uppercase tracking-wider">Vencidos</span>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center min-w-[110px]">
+                    <span class="block text-2xl font-black text-amber-700" id="count-yellow">0</span>
+                    <span class="text-xs font-semibold text-amber-600 uppercase tracking-wider">Até 7 dias</span>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center min-w-[110px]">
+                    <span class="block text-2xl font-black text-emerald-700" id="count-green">0</span>
+                    <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Em curso</span>
+                </div>
+            </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-medium text-slate-700 mb-1">Observações / Detalhes da Exigência</label>
-          <textarea id="obs" rows="2" placeholder="Descreva os documentos solicitados pelo analista ou pendências..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+        <!-- Filtros e Busca -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-6 justify-between items-center">
+            <div class="relative w-full sm:w-96">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                <input type="text" id="searchInput" onkeyup="filterProjects()" placeholder="Buscar empreendimento, protocolo ou responsável..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div class="flex gap-2 w-full sm:w-auto">
+                <select id="filterStatus" onchange="filterProjects()" class="border border-slate-300 rounded-lg text-sm px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="ALL">Todos os Alertas</option>
+                    <option value="RED">Vermelho (Vencido)</option>
+                    <option value="YELLOW">Amarelo (Até 7 dias)</option>
+                    <option value="GREEN">Verde (Em dia)</option>
+                </select>
+            </div>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-2">
-          <button type="button" id="btnCancelar" onclick="cancelarEdicao()" class="hidden px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800">Cancelar</button>
-          <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">Salvar Processo</button>
+        <!-- Lista de Empreendimentos Agrupados -->
+        <div id="groupedProjectsContainer" class="space-y-6">
+            <!-- Renderizado via JavaScript -->
         </div>
-      </form>
-    </section>
 
-    <!-- Filtros e Busca -->
-    <section class="mt-8 flex flex-col md:flex-row gap-3 items-center justify-between">
-      <div class="w-full md:w-72">
-        <input type="text" id="filtroTexto" oninput="renderizarTabela()" placeholder="Buscar por título, cliente ou órgão..." class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-      </div>
-      <div class="flex w-full md:w-auto gap-2">
-        <select id="filtroStatus" onchange="renderizarTabela()" class="text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
-          <option value="">Todos os status</option>
-          <option value="Não iniciado">Não iniciado</option>
-          <option value="Em andamento">Em andamento</option>
-          <option value="Aguardando órgão">Aguardando órgão</option>
-          <option value="Pendente cliente">Pendente cliente</option>
-          <option value="Concluído">Concluído</option>
-        </select>
-        <select id="filtroResponsavel" onchange="renderizarTabela()" class="text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
-          <option value="">Todos os responsáveis</option>
-        </select>
-      </div>
-    </section>
-
-    <!-- Lista de Processos -->
-    <section class="mt-4 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
-            <tr>
-              <th class="py-3 px-4">Prazo / Urgência</th>
-              <th class="py-3 px-4">Processo / Cliente</th>
-              <th class="py-3 px-4">Órgão</th>
-              <th class="py-3 px-4">Status</th>
-              <th class="py-3 px-4">Responsáveis & Alerta</th>
-              <th class="py-3 px-4 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaCorpo" class="divide-y divide-slate-200">
-            <!-- Linhas geradas via JavaScript -->
-          </tbody>
-        </table>
-      </div>
-      <div id="tabelaVazia" class="hidden text-center py-12 text-slate-400 text-sm">
-        Nenhum processo cadastrado no momento.
-      </div>
-    </section>
-  </div>
-
-  <!-- Modal: Gerenciar Equipe -->
-  <div id="modalEquipe" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-200">
-        <h3 class="text-base font-semibold text-slate-900">Gerenciar Equipe</h3>
-        <button onclick="toggleModalEquipe()" class="text-slate-400 hover:text-slate-600">&times;</button>
-      </div>
-      <form onsubmit="adicionarMembro(event)" class="mt-4 space-y-3">
-        <div>
-          <label class="block text-xs font-medium text-slate-700 mb-1">Nome do Responsável *</label>
-          <input type="text" id="membroNome" required placeholder="Ex: Carlos Silva" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2">
+        <!-- Mensagem de lista vazia -->
+        <div id="emptyState" class="bg-white rounded-xl border border-dashed border-slate-300 p-12 text-center text-slate-500 hidden">
+            <i data-lucide="folder-open" class="w-12 h-12 mx-auto mb-3 text-slate-300"></i>
+            <p class="font-semibold text-slate-700">Nenhum processo cadastrado ainda.</p>
+            <p class="text-sm text-slate-400 mt-1">Clique em "Novo Processo" acima para cadastrar seu primeiro registro.</p>
         </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-700 mb-1">WhatsApp (com DDD) *</label>
-          <input type="text" id="membroTel" required placeholder="Ex: 11987654321" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2">
+    </main>
+
+    <!-- MODAL DE CADASTRO -->
+    <div id="modalContainer" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex justify-center items-center hidden p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Header Modal -->
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg">Cadastrar Novo Processo / Licença</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Form Modal -->
+            <form id="projectForm" onsubmit="handleFormSubmit(event)" class="p-6 overflow-y-auto space-y-4">
+                
+                <!-- 1. Nome do Projeto (Empreendimento) -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">1. Nome do Empreendimento / Projeto *</label>
+                    <input type="text" id="projectName" required placeholder="Ex: Edifício Aurora" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <p class="text-xs text-slate-400 mt-1">Registros com o mesmo nome serão automaticamente agrupados.</p>
+                </div>
+
+                <!-- 2. Tipo de Processo -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1">2.1 Tipo de Projeto</label>
+                        <select id="projectTypeArchitecture" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                            <option value="">Nenhum / Não se aplica</option>
+                            <option value="Reforma com acréscimo de área">Reforma com acréscimo de área</option>
+                            <option value="Reforma com decréscimo de área">Reforma com decréscimo de área</option>
+                            <option value="Reforma sem acréscimo de área">Reforma sem acréscimo de área</option>
+                            <option value="Legalização de Reforma">Legalização de Reforma</option>
+                            <option value="Legalização total">Legalização total</option>
+                            <option value="Legalização com Reforma">Legalização com Reforma</option>
+                            <option value="Projeto inicial">Projeto inicial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1">2.2 Tipo Ambiental</label>
+                        <select id="projectTypeEnvironmental" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                            <option value="">Nenhum / Não se aplica</option>
+                            <option value="Licença Prévia">Licença Prévia</option>
+                            <option value="Licença de Instalação">Licença de Instalação</option>
+                            <option value="Licença de Operação">Licença de Operação</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 3. Numero do Protocolo -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">3. Número do Protocolo</label>
+                    <input type="text" id="protocolNumber" placeholder="Ex: 2024/09123-PE" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <!-- 4. Situação / Status Atual -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">4. Situação / Status Atual *</label>
+                    <select id="currentStatus" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                        <option value="Em elaboração inicial pela equipe SEPE">Em elaboração inicial pela equipe SEPE</option>
+                        <option value="Em atendimento de exigência pela equipe SEPE">Em atendimento de exigência pela equipe SEPE</option>
+                        <option value="Aguardando gestão">Aguardando gestão</option>
+                        <option value="Em análise pelo órgão de licenciamento">Em análise pelo órgão de licenciamento</option>
+                    </select>
+                </div>
+
+                <!-- 5. Prazo Elaboração -->
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <label class="block text-xs font-bold uppercase text-slate-700 mb-2">5. Existe prazo para finalizar a elaboração?</label>
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center text-sm gap-2">
+                            <input type="radio" name="hasElaborationDeadline" value="no" checked onclick="toggleDateInput('elaborationDeadlineDate', false)"> Não
+                        </label>
+                        <label class="flex items-center text-sm gap-2">
+                            <input type="radio" name="hasElaborationDeadline" value="yes" onclick="toggleDateInput('elaborationDeadlineDate', true)"> Sim
+                        </label>
+                        <input type="date" id="elaborationDeadlineDate" disabled class="ml-auto border border-slate-300 rounded-lg px-3 py-1 text-sm disabled:opacity-50">
+                    </div>
+                </div>
+
+                <!-- 6. Prazo Exigência & Responsável -->
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                    <label class="block text-xs font-bold uppercase text-slate-700">6. Existe prazo para cumprimento de exigência oficial?</label>
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center text-sm gap-2">
+                            <input type="radio" name="hasExigencyDeadline" value="no" checked onclick="toggleExigencySection(false)"> Não
+                        </label>
+                        <label class="flex items-center text-sm gap-2">
+                            <input type="radio" name="hasExigencyDeadline" value="yes" onclick="toggleExigencySection(true)"> Sim
+                        </label>
+                        <input type="date" id="exigencyDeadlineDate" disabled class="ml-auto border border-slate-300 rounded-lg px-3 py-1 text-sm disabled:opacity-50">
+                    </div>
+                    
+                    <!-- Campo do Responsável pelo Atendimento -->
+                    <div id="responsibleFieldContainer" class="hidden pt-2 border-t border-slate-200">
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Responsável pelo atendimento da exigência</label>
+                        <input type="text" id="responsibleName" placeholder="Ex: Arq. João Silva / SEPE" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                    </div>
+                </div>
+
+                <!-- Footer Modal -->
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow">Adicionar Processo</button>
+                </div>
+            </form>
         </div>
-        <button type="submit" class="w-full py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm">Adicionar Membro</button>
-      </form>
-      <div class="mt-4 pt-4 border-t border-slate-200">
-        <h4 class="text-xs font-semibold text-slate-500 uppercase mb-2">Membros Cadastrados</h4>
-        <div id="listaEquipeModal" class="space-y-2 max-h-48 overflow-y-auto"></div>
-      </div>
     </div>
-  </div>
 
-  <!-- Modal: Configuração de Faixas de Risco -->
-  <div id="modalConfig" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-200">
-        <h3 class="text-base font-semibold text-slate-900">Faixas de Alerta (Dias)</h3>
-        <button onclick="toggleModalConfig()" class="text-slate-400 hover:text-slate-600">&times;</button>
-      </div>
-      <form onsubmit="salvarConfig(event)" class="mt-4 space-y-4">
-        <div>
-          <label class="block text-xs font-medium text-red-600 mb-1">Faixa Crítica (vence em até X dias)</label>
-          <input type="number" id="configCritico" min="1" max="30" required class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-amber-600 mb-1">Faixa de Atenção (vence em até X dias)</label>
-          <input type="number" id="configAtencao" min="1" max="60" required class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2">
-        </div>
-        <button type="submit" class="w-full py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm">Salvar Configurações</button>
-      </form>
-    </div>
-  </div>
+    <!-- O BANCO DE DADOS SERÁ EMBUTIDO DIRETAMENTE AQUI NESTA TAG SCRIPT -->
+    <script id="database-script">
+        window.EMBEDDED_PROJECTS = [];
+    </script>
 
-  <script>
-    const K_PROC = "sepes_processos_v1";
-    const K_EQUIPE = "sepes_equipe_v1";
-    const K_FAIXAS = "sepes_faixas_v1";
+    <script>
+        // Carrega dados iniciais da tag script de banco de dados
+        let projects = [...(window.EMBEDDED_PROJECTS || [])];
 
-    let processos = JSON.parse(localStorage.getItem(K_PROC) || "[]");
-    let equipe = JSON.parse(localStorage.getItem(K_EQUIPE) || "[]");
-    let faixas = JSON.parse(localStorage.getItem(K_FAIXAS) || JSON.stringify({ critico: 3, atencao: 7 }));
-    let selecionados = [];
-
-    function salvarLocal() {
-      localStorage.setItem(K_PROC, JSON.stringify(processos));
-      localStorage.setItem(K_EQUIPE, JSON.stringify(equipe));
-      localStorage.setItem(K_FAIXAS, JSON.stringify(faixas));
-      atualizarTudo();
-    }
-
-    function diasAte(dataStr) {
-      if (!dataStr) return null;
-      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-      const prazo = new Date(dataStr + "T00:00:00");
-      return Math.round((prazo.getTime() - hoje.getTime()) / 86400000);
-    }
-
-    function classificarRisco(proc) {
-      if (proc.status === "Concluído") return "concluido";
-      const d = diasAte(proc.prazo);
-      if (d === null) return "sem_prazo";
-      if (d < 0) return "atrasado";
-      if (d <= faixas.critico) return "critico";
-      if (d <= faixas.atencao) return "atencao";
-      return "ok";
-    }
-
-    function formatarWhatsAppLink(membro, proc) {
-      const d = diasAte(proc.prazo);
-      let quando = d === null ? "sem data estipulada" : d < 0 ? `ATRASADO há ${-d} dia(s)` : d === 0 ? "vence HOJE" : `vence em ${d} dia(s)`;
-      let data = proc.prazo ? ` (${proc.prazo.split('-').reverse().join('/')})` : "";
-      let digitos = membro.telefone.replace(/\D/g, "");
-      if (digitos.length === 10 || digitos.length === 11) digitos = "55" + digitos;
-
-      let msg = `Olá ${membro.nome.split(" ")[0]}! ⚠ *Alerta SEPES Legalização*\n\n` +
-                `Processo: *${proc.titulo}*\n` +
-                (proc.cliente ? `Cliente: ${proc.cliente}\n` : '') +
-                (proc.orgao ? `Órgão: ${proc.orgao}\n` : '') +
-                `Prazo: ${quando}${data}\n` +
-                `Status: ${proc.status}\n\n` +
-                `Por favor, acompanhe o cumprimento da exigência.`;
-
-      return `https://wa.me/${digitos}?text=${encodeURIComponent(msg)}`;
-    }
-
-    function toggleResponsavel(nome) {
-      if (selecionados.includes(nome)) {
-        selecionados = selecionados.filter(n => n !== nome);
-      } else {
-        selecionados.push(nome);
-      }
-      renderizarResponsaveisForm();
-    }
-
-    function renderizarResponsaveisForm() {
-      const container = document.getElementById("responsaveisContainer");
-      if (equipe.length === 0) {
-        container.innerHTML = `<span class="text-xs text-slate-400 p-1">Cadastre membros em 'Gerenciar Equipe'</span>`;
-        return;
-      }
-      container.innerHTML = equipe.map(m => {
-        const ativo = selecionados.includes(m.nome);
-        return `<button type="button" onclick="toggleResponsavel('${m.nome}')" class="text-xs px-2.5 py-1 rounded-full border transition ${ativo ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}">${m.nome}</button>`;
-      }).join("");
-    }
-
-    function salvarProcesso(e) {
-      e.preventDefault();
-      const id = document.getElementById("processoId").value || "p_" + Date.now();
-      const dados = {
-        id,
-        titulo: document.getElementById("titulo").value.trim(),
-        cliente: document.getElementById("cliente").value.trim(),
-        orgao: document.getElementById("orgao").value.trim(),
-        prazo: document.getElementById("prazo").value,
-        status: document.getElementById("status").value,
-        responsaveis: [...selecionados],
-        obs: document.getElementById("obs").value.trim()
-      };
-
-      const idx = processos.findIndex(p => p.id === id);
-      if (idx >= 0) processos[idx] = dados;
-      else processos.push(dados);
-
-      cancelarEdicao();
-      salvarLocal();
-    }
-
-    function editarProcesso(id) {
-      const p = processos.find(x => x.id === id);
-      if (!p) return;
-      document.getElementById("processoId").value = p.id;
-      document.getElementById("titulo").value = p.titulo;
-      document.getElementById("cliente").value = p.cliente;
-      document.getElementById("orgao").value = p.orgao;
-      document.getElementById("prazo").value = p.prazo;
-      document.getElementById("status").value = p.status;
-      document.getElementById("obs").value = p.obs;
-      selecionados = [...(p.responsaveis || [])];
-      document.getElementById("formTitulo").innerText = "Editar Processo";
-      document.getElementById("btnCancelar").classList.remove("hidden");
-      renderizarResponsaveisForm();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cancelarEdicao() {
-      document.getElementById("processoForm").reset();
-      document.getElementById("processoId").value = "";
-      document.getElementById("formTitulo").innerText = "Novo Processo / Exigência";
-      document.getElementById("btnCancelar").classList.add("hidden");
-      selecionados = [];
-      renderizarResponsaveisForm();
-    }
-
-    function excluirProcesso(id) {
-      if (confirm("Deseja realmente remover este processo?")) {
-        processos = processos.filter(p => p.id !== id);
-        salvarLocal();
-      }
-    }
-
-    function renderizarTabela() {
-      const filtroTxt = document.getElementById("filtroTexto").value.toLowerCase();
-      const filtroSt = document.getElementById("filtroStatus").value;
-      const filtroResp = document.getElementById("filtroResponsavel").value;
-
-      let lista = processos.filter(p => {
-        const matchTxt = (p.titulo + " " + p.cliente + " " + p.orgao).toLowerCase().includes(filtroTxt);
-        const matchSt = !filtroSt || p.status === filtroSt;
-        const matchResp = !filtroResp || (p.responsaveis && p.responsaveis.includes(filtroResp));
-        return matchTxt && matchSt && matchResp;
-      });
-
-      lista.sort((a, b) => {
-        if (!a.prazo) return 1;
-        if (!b.prazo) return -1;
-        return new Date(a.prazo) - new Date(b.prazo);
-      });
-
-      const tbody = document.getElementById("tabelaCorpo");
-      const vazia = document.getElementById("tabelaVazia");
-
-      if (lista.length === 0) {
-        tbody.innerHTML = "";
-        vazia.classList.remove("hidden");
-        return;
-      }
-      vazia.classList.add("hidden");
-
-      tbody.innerHTML = lista.map(p => {
-        const r = classificarRisco(p);
-        const d = diasAte(p.prazo);
-        const dataFmt = p.prazo ? p.prazo.split('-').reverse().join('/') : "—";
-
-        let badge = "";
-        let borderClass = "border-l-4 border-transparent";
-
-        if (r === "atrasado") {
-          badge = `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-medium">Atrasado (${-d}d)</span>`;
-          borderClass = "border-l-4 border-red-600 bg-red-50/20";
-        } else if (r === "critico") {
-          badge = `<span class="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium">Crítico (em ${d}d)</span>`;
-          borderClass = "border-l-4 border-red-400";
-        } else if (r === "atencao") {
-          badge = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-medium">Atenção (em ${d}d)</span>`;
-          borderClass = "border-l-4 border-amber-400";
-        } else if (r === "ok") {
-          badge = `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-medium">No prazo (${d}d)</span>`;
-        } else if (r === "concluido") {
-          badge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-medium">Concluído</span>`;
+        // Tenta buscar dados do localStorage se não houver no script
+        if (projects.length === 0 && localStorage.getItem('sepes_projects_backup')) {
+            try {
+                projects = JSON.parse(localStorage.getItem('sepes_projects_backup'));
+            } catch (e) {
+                projects = [];
+            }
         }
 
-        const respBotoes = (p.responsaveis || []).map(nome => {
-          const m = equipe.find(e => e.nome === nome);
-          if (!m) return `<span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">${nome}</span>`;
-          return `
-            <div class="inline-flex items-center gap-1 bg-slate-100 border border-slate-200 rounded px-2 py-1 text-xs">
-              <span class="font-medium text-slate-700">${m.nome}</span>
-              <a href="${formatarWhatsAppLink(m, p)}" target="_blank" title="Enviar alerta WhatsApp" class="inline-flex items-center text-[10px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-1.5 py-0.5 rounded transition">
-                WA
-              </a>
-            </div>
-          `;
-        }).join(" ");
+        // Calcula a cor e situação do prazo principal
+        function calculateAlertState(project) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-        return `
-          <tr class="${borderClass} hover:bg-slate-50/80 transition">
-            <td class="py-3 px-4">
-              <div class="font-medium text-slate-900">${dataFmt}</div>
-              <div class="mt-0.5">${badge}</div>
-            </td>
-            <td class="py-3 px-4">
-              <div class="font-semibold text-slate-900">${p.titulo}</div>
-              <div class="text-xs text-slate-500">${p.cliente || 'Sem cliente'}</div>
-              ${p.obs ? `<div class="text-[11px] text-slate-400 mt-1 max-w-xs truncate">${p.obs}</div>` : ''}
-            </td>
-            <td class="py-3 px-4 text-slate-700 font-medium">${p.orgao || '—'}</td>
-            <td class="py-3 px-4">
-              <span class="inline-block px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-800 border border-slate-200">${p.status}</span>
-            </td>
-            <td class="py-3 px-4">
-              <div class="flex flex-wrap gap-1.5">${respBotoes || '<span class="text-xs text-slate-400">Sem responsável</span>'}</div>
-            </td>
-            <td class="py-3 px-4 text-right space-x-2">
-              <button onclick="editarProcesso('${p.id}')" class="text-xs text-blue-600 hover:text-blue-800 font-medium">Editar</button>
-              <button onclick="excluirProcesso('${p.id}')" class="text-xs text-red-600 hover:text-red-800 font-medium">Excluir</button>
-            </td>
-          </tr>
-        `;
-      }).join("");
-    }
+            let datesToCheck = [];
+            if (project.hasExigencyDeadline && project.exigencyDate) {
+                datesToCheck.push(new Date(project.exigencyDate + 'T00:00:00'));
+            }
+            if (project.hasElabDeadline && project.elabDate) {
+                datesToCheck.push(new Date(project.elabDate + 'T00:00:00'));
+            }
 
-    function atualizarResumos() {
-      let aberto = 0, atencao = 0, critico = 0;
-      processos.forEach(p => {
-        if (p.status !== "Concluído") {
-          aberto++;
-          const r = classificarRisco(p);
-          if (r === "atencao") atencao++;
-          if (r === "critico" || r === "atrasado") critico++;
+            if (datesToCheck.length === 0) {
+                return { color: 'GREEN', minDays: Infinity, label: 'Em Curso / Sem Prazo Fixo' };
+            }
+
+            const minDate = new Date(Math.min(...datesToCheck));
+            const diffTime = minDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                return { color: 'RED', minDays: diffDays, label: `Vencido (${Math.abs(diffDays)}d)` };
+            } else if (diffDays <= 7) {
+                return { color: 'YELLOW', minDays: diffDays, label: `Vence em ${diffDays}d` };
+            } else {
+                return { color: 'GREEN', minDays: diffDays, label: `Em dia (${diffDays}d restantes)` };
+            }
         }
-      });
 
-      document.getElementById("statTotal").innerText = processos.length;
-      document.getElementById("statAberto").innerText = aberto;
-      document.getElementById("statAtencao").innerText = atencao;
-      document.getElementById("statCritico").innerText = critico;
+        // Renderiza agrupando por Empreendimento
+        function renderProjects() {
+            const container = document.getElementById('groupedProjectsContainer');
+            const emptyState = document.getElementById('emptyState');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+            const filterVal = document.getElementById('filterStatus').value;
 
-      const banner = document.getElementById("alertaBanner");
-      if (critico > 0) {
-        banner.classList.remove("hidden");
-        document.getElementById("alertaTexto").innerText = `Atenção: Você tem ${critico} processo(s) na faixa crítica ou com prazo vencido!`;
-      } else {
-        banner.classList.add("hidden");
-      }
-    }
+            container.innerHTML = '';
+            
+            let redCount = 0, yellowCount = 0, greenCount = 0;
 
-    function atualizarSelectEquipe() {
-      const select = document.getElementById("filtroResponsavel");
-      const atual = select.value;
-      select.innerHTML = `<option value="">Todos os responsáveis</option>` + equipe.map(m => `<option value="${m.nome}">${m.nome}</option>`).join("");
-      select.value = atual;
-    }
+            // Recalcular os alertas globais primeiramente
+            projects.forEach(p => {
+                const alert = calculateAlertState(p);
+                if (alert.color === 'RED') redCount++;
+                if (alert.color === 'YELLOW') yellowCount++;
+                if (alert.color === 'GREEN') greenCount++;
+            });
 
-    function toggleModalEquipe() {
-      const m = document.getElementById("modalEquipe");
-      m.classList.toggle("hidden");
-      renderizarListaEquipeModal();
-    }
+            document.getElementById('count-red').innerText = redCount;
+            document.getElementById('count-yellow').innerText = yellowCount;
+            document.getElementById('count-green').innerText = greenCount;
 
-    function renderizarListaEquipeModal() {
-      const container = document.getElementById("listaEquipeModal");
-      if (equipe.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400">Nenhum integrante cadastrado.</p>`;
-        return;
-      }
-      container.innerHTML = equipe.map(m => `
-        <div class="flex items-center justify-between text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg">
-          <div>
-            <p class="font-medium text-slate-800">${m.nome}</p>
-            <p class="text-slate-500">${m.telefone}</p>
-          </div>
-          <button onclick="removerMembro('${m.id}')" class="text-red-500 hover:text-red-700">Excluir</button>
-        </div>
-      `).join("");
-    }
+            if (projects.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
 
-    function adicionarMembro(e) {
-      e.preventDefault();
-      const nome = document.getElementById("membroNome").value.trim();
-      const telefone = document.getElementById("membroTel").value.trim();
-      equipe.push({ id: "m_" + Date.now(), nome, telefone });
-      document.getElementById("membroNome").value = "";
-      document.getElementById("membroTel").value = "";
-      salvarLocal();
-      renderizarListaEquipeModal();
-      renderizarResponsaveisForm();
-      atualizarSelectEquipe();
-    }
+            // Agrupamento por Nome do Empreendimento
+            const groups = {};
+            projects.forEach(p => {
+                const key = p.name.trim();
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(p);
+            });
 
-    function removerMembro(id) {
-      equipe = equipe.filter(m => m.id !== id);
-      salvarLocal();
-      renderizarListaEquipeModal();
-      renderizarResponsaveisForm();
-      atualizarSelectEquipe();
-    }
+            let visibleGroups = 0;
 
-    function toggleModalConfig() {
-      const m = document.getElementById("modalConfig");
-      m.classList.toggle("hidden");
-      document.getElementById("configCritico").value = faixas.critico;
-      document.getElementById("configAtencao").value = faixas.atencao;
-    }
+            Object.keys(groups).forEach(empName => {
+                const processList = groups[empName];
 
-    function salvarConfig(e) {
-      e.preventDefault();
-      faixas.critico = parseInt(document.getElementById("configCritico").value);
-      faixas.atencao = parseInt(document.getElementById("configAtencao").value);
-      salvarLocal();
-      toggleModalConfig();
-    }
+                // Filtrar os processos dentro do grupo
+                const filteredProcesses = processList.filter(p => {
+                    const alert = calculateAlertState(p);
+                    const matchSearch = p.name.toLowerCase().includes(searchVal) || 
+                                        p.protocol.toLowerCase().includes(searchVal) ||
+                                        (p.responsible && p.responsible.toLowerCase().includes(searchVal));
+                    const matchFilter = filterVal === 'ALL' || alert.color === filterVal;
+                    return matchSearch && matchFilter;
+                });
 
-    function atualizarTudo() {
-      renderizarResponsaveisForm();
-      atualizarSelectEquipe();
-      atualizarResumos();
-      renderizarTabela();
-    }
+                if (filteredProcesses.length === 0) return;
+                visibleGroups++;
 
-    // Inicialização
-    atualizarTudo();
-  </script>
+                // Criar card do grupo (Empreendimento)
+                const groupCard = document.createElement('div');
+                groupCard.className = "bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden";
+
+                let rowsHtml = filteredProcesses.map(p => {
+                    const alert = calculateAlertState(p);
+                    let badgeClass = '';
+                    if (alert.color === 'RED') badgeClass = 'bg-red-100 text-red-800 border-red-300';
+                    else if (alert.color === 'YELLOW') badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                    else badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+
+                    return `
+                        <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-sm">
+                            <td class="py-3 px-4 whitespace-nowrap">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${badgeClass}">
+                                    <span class="w-2 h-2 rounded-full ${alert.color === 'RED' ? 'bg-red-600' : alert.color === 'YELLOW' ? 'bg-amber-600' : 'bg-emerald-600'} animate-pulse"></span>
+                                    ${alert.label}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-xs font-mono text-slate-600">
+                                ${p.protocol ? `<span class="font-bold text-slate-800">${p.protocol}</span>` : '<span class="text-slate-400">Sem protocolo</span>'}
+                            </td>
+                            <td class="py-3 px-4 text-xs">
+                                <div class="font-medium text-slate-800">${p.archType || '-'}</div>
+                                <div class="text-slate-400">${p.envType || '-'}</div>
+                            </td>
+                            <td class="py-3 px-4 text-xs">
+                                <span class="inline-block px-2 py-1 font-medium rounded bg-slate-100 text-slate-700 border border-slate-200">
+                                    ${p.status}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-xs text-slate-600">
+                                ${p.hasElabDeadline ? `<span class="font-semibold">${formatDate(p.elabDate)}</span>` : '<span class="text-slate-400">-</span>'}
+                            </td>
+                            <td class="py-3 px-4 text-xs text-slate-600">
+                                ${p.hasExigencyDeadline ? `
+                                    <div class="font-semibold text-red-600">${formatDate(p.exigencyDate)}</div>
+                                    <div class="text-[11px] text-slate-500 font-normal">Resp: ${p.responsible || 'Não informado'}</div>
+                                ` : '<span class="text-slate-400">-</span>'}
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                <button onclick="deleteProject(${p.id})" class="text-slate-400 hover:text-red-600 transition p-1" title="Excluir licença">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                groupCard.innerHTML = `
+                    <div class="bg-slate-100/80 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="building-2" class="w-5 h-5 text-blue-600"></i>
+                            <h3 class="font-bold text-slate-800 text-base">${empName}</h3>
+                            <span class="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full font-semibold">${filteredProcesses.length} licença(s)/processo(s)</span>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-slate-600">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-[11px] tracking-wider border-b border-slate-200">
+                                <tr>
+                                    <th class="py-2.5 px-4">Alerta de Prazo</th>
+                                    <th class="py-2.5 px-4">Nº Protocolo</th>
+                                    <th class="py-2.5 px-4">Tipo de Processo</th>
+                                    <th class="py-2.5 px-4">Status Atual</th>
+                                    <th class="py-2.5 px-4">Prazo Elaboração</th>
+                                    <th class="py-2.5 px-4">Prazo Exigência / Resp.</th>
+                                    <th class="py-2.5 px-4 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                container.appendChild(groupCard);
+            });
+
+            if (visibleGroups === 0 && projects.length > 0) {
+                emptyState.classList.remove('hidden');
+            }
+
+            lucide.createIcons();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
+        function filterProjects() {
+            renderProjects();
+        }
+
+        function toggleDateInput(inputId, enable) {
+            const input = document.getElementById(inputId);
+            input.disabled = !enable;
+            if (!enable) input.value = '';
+        }
+
+        function toggleExigencySection(enable) {
+            toggleDateInput('exigencyDeadlineDate', enable);
+            const respContainer = document.getElementById('responsibleFieldContainer');
+            if (enable) {
+                respContainer.classList.remove('hidden');
+            } else {
+                respContainer.classList.add('hidden');
+                document.getElementById('responsibleName').value = '';
+            }
+        }
+
+        function openModal() {
+            document.getElementById('modalContainer').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modalContainer').classList.add('hidden');
+            document.getElementById('projectForm').reset();
+            toggleDateInput('elaborationDeadlineDate', false);
+            toggleExigencySection(false);
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const elabRadio = document.querySelector('input[name="hasElaborationDeadline"]:checked').value === 'yes';
+            const exigencyRadio = document.querySelector('input[name="hasExigencyDeadline"]:checked').value === 'yes';
+
+            const newProj = {
+                id: Date.now(),
+                name: document.getElementById('projectName').value.trim(),
+                archType: document.getElementById('projectTypeArchitecture').value,
+                envType: document.getElementById('projectTypeEnvironmental').value,
+                protocol: document.getElementById('protocolNumber').value.trim(),
+                status: document.getElementById('currentStatus').value,
+                hasElabDeadline: elabRadio,
+                elabDate: elabRadio ? document.getElementById('elaborationDeadlineDate').value : '',
+                hasExigencyDeadline: exigencyRadio,
+                exigencyDate: exigencyRadio ? document.getElementById('exigencyDeadlineDate').value : '',
+                responsible: exigencyRadio ? document.getElementById('responsibleName').value.trim() : ''
+            };
+
+            projects.unshift(newProj);
+            localStorage.setItem('sepes_projects_backup', JSON.stringify(projects));
+            renderProjects();
+            closeModal();
+        }
+
+        function deleteProject(id) {
+            if (confirm('Deseja realmente remover esta licença do empreendimento?')) {
+                projects = projects.filter(p => p.id !== id);
+                localStorage.setItem('sepes_projects_backup', JSON.stringify(projects));
+                renderProjects();
+            }
+        }
+
+        // Salva os dados ATUAIS dentro do próprio código fonte HTML e gera o download atualizado
+        function saveAndExportHTML() {
+            // Clona o HTML completo do documento
+            let htmlContent = document.documentElement.outerHTML;
+
+            // Substitui o script do banco de dados pelos dados atuais
+            const dbScriptRegex = /<script id="database-script">[\s\S]*?<\/script>/;
+            const updatedDbScript = `<script id="database-script">\n        window.EMBEDDED_PROJECTS = ${JSON.stringify(projects, null, 8)};\n    <\/script>`;
+            
+            htmlContent = htmlContent.replace(dbScriptRegex, updatedDbScript);
+
+            // Cria um blob e inicia o download da nova cópia do HTML
+            const blob = new Blob(["<!DOCTYPE html>\n" + htmlContent], { type: 'text/html;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `PORTAL_PROCESSOS_SEPES_PE_${new Date().toISOString().slice(0,10)}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+
+            alert('Arquivo HTML atualizado e baixado com sucesso! Seus dados agora estão salvos permanentemente dentro deste próprio arquivo HTML.');
+        }
+
+        // Inicializar a aplicação
+        window.onload = () => {
+            renderProjects();
+        };
+    </script>
 </body>
 </html>
